@@ -1,0 +1,61 @@
+version: "3"
+services:
+  # NGINX
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports: 
+      - "8080:80"
+    networks:
+      - internal
+    volumes:
+      - './data:/var/www/html'
+      - ./logs/nginx:/var/log/nginx
+      - './nginx:/etc/nginx/conf.d'
+    depends_on:
+      - php
+
+  # PHP
+  php:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    networks:
+      - internal
+    volumes:
+      - './data:/var/www/html'
+      - './logs/php.log:/var/log/fpm-php.www.log'
+    depends_on:
+      - mariadb
+
+  # MariaDB Service
+  mariadb:
+    build: 
+      context: .
+      dockerfile: mariadb/Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: your_password
+    volumes:
+      - mysqldata:/var/lib/mysql
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    build: 
+      context: .
+      dockerfile: phpmyadmin/Dockerfile
+    ports:
+      - 80:80
+    environment:
+      PMA_HOST: mariadb
+    depends_on:
+      - mariadb
+
+# Reverse Proxy
+networks:
+  internal:
+    driver: bridge
+
+# Volumes
+volumes:
+  mysqldata:
